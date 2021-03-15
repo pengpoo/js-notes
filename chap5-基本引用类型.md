@@ -36,7 +36,7 @@ let now = new Date();
 
 - [ ] `‘month/day/year'`, eg:`5/23/2019`;
 - [ ] `'月名 日, 年'`, eg:`'May 23, 2019'`
-- [ ] `'周几 月名 日 年 时:分:秒 时区'`, eg：`Tue Mar 9 2021 12:28:30 GMT+0800`
+- [ ] `'周几 月名 日 年 时:分:秒 时区'`, eg：`'Tue Mar 9 2021 12:28:30 GMT+0800'`
 
 ```javascript
 let someDate = new Date(Date.parse('3/9/2021'))
@@ -130,14 +130,14 @@ ECMAScript通过`RegExp`类型支持正则表达式。
 let expression = /pattern/flags;
 ```
 
-`pattern`可以是任何简单或复杂的正则表达式，每个正则表达式可以带另个或多个`flag`：
+`pattern`可以是任何简单或复杂的正则表达式，每个正则表达式可以带一个或多个`flag`：
 
 - [ ] `g`全局模式
 - [ ] `i`不分大小写
 - [ ] `m`多行模式，查找到一行文本末尾时会继续查找
 - [ ] `y`粘附模式，只查找从`lastIndex`开始之后的字符串
 - [ ] `u` Unicode模式，启用Unicode匹配
-- [ ] `s` dotAll模式，表示元字符`.`，匹配任何字符（包括`\n`或`\r`）
+- [ ] `s` dotAll模式，表示元字符`.`可以匹配任何字符（包括`\n`或`\r`）
 
 正则表达式`pattern`中所有元字符也必须转义，元字符有:
 
@@ -172,7 +172,7 @@ let pattern2 = new RegExp('\\[bc\\]at', 'i');
 - [ ] `ignoreCase`
 - [ ] `unicode`
 - [ ] `sticky`
-- [ ] `lastIndex` 整数，表示在源字符中下一次搜索的开始位置
+- [ ] `lastIndex` 整数，表示在原字符中下一次搜索的开始位置
 - [ ] `multiline`
 - [ ] `dotAll`
 - [ ] `source` 正则表达式的字面量字符串，（不是传给构造函数的的那个字符串）
@@ -285,7 +285,7 @@ if (pattern.test(text)) {
 
 ----
 
-继承的方法`toString()`和`toLocaleString()`都返回正则表达式的字面量
+继承的方法`toString()`和`toLocaleString()`都返回正则表达式的字面量，返回的是一个字符串
 
 ```javascript
 let pattern = /\[bc\]at/gi;
@@ -297,11 +297,14 @@ console.log(pattern.toString()); // /\[bc\]at/gi
 console.log(pattern.toLocaleString()); // /\[bc\]at/gi
 ```
 
-正则表达式对象的`valueOf()`函数返回表达式本身
+正则表达式对象的`valueOf()`函数返回表达式本身，返回的还是个对象
 
 ```javascript
 // 上面的那个对象pattern
 console.log(pattern.valueOf()); // /\[bc\]at/gi
+typeof pattern.valueOf(); // object
+Number(pattern); // NaN 
+// 先调用valueOf(),返回的不是原始类型，调用toString(),返回字符串是原始类型，转换。
 ```
 
 #### 5.2.3 RegExp构造函数属性
