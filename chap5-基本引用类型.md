@@ -175,12 +175,13 @@ let pattern2 = new RegExp('\\[bc\\]at', 'i');
 - [ ] `lastIndex` 整数，表示在原字符中下一次搜索的开始位置
 - [ ] `multiline`
 - [ ] `dotAll`
-- [ ] `source` 正则表达式的字面量字符串，（不是传给构造函数的的那个字符串）
+- [ ] `source` 返回匹配模式的字面量字符串，（不是传给构造函数的的那个字符串）
 - [ ] `flags`
 
 ```javascript
 let pattern = /\[bc\]at/gi;
-console.log(pattern.source); // \[bc\]at
+console.log(pattern.source); // \[bc\]at 返回pattern的字面量字符串，没有开头和结尾的斜杠。
+// 和后面的toString() toLocaleString()方法的返回内容要注意区分。
 let pattern = new RegExp('\\[bc\\]at', 'gi');
 console.log(pattern.source); // \[bc\]at
 ```
@@ -210,6 +211,15 @@ console.log(matches.input); // mom and dad and me and mimi
 console.log(matches[0]); // mom and dad and me
 console.log(matches[1]); //  and dad and me
 console.log(matches[2]); //  and me
+
+let text = 'mom';
+let pattern = /mom( and dad( and me)?)?/gi
+let matches = pattern.exec(text);
+console.log(matches.index); // 0
+console.log(matches.input); // mom
+console.log(matches[0]); // mom  ?前的表示可选
+console.log(matches[1]); // undefined
+console.log(matches[2]); // undefined
 ```
 
 设置全局标记与不设置全局标记的区别
@@ -221,10 +231,12 @@ let matches = pattern.exec(text);
 console.log(matches.index); // 0
 console.log(matches.input); // cat, bat, sat, fat
 console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 0
 matches = pattern.exec(text);
 console.log(matches.index); // 0
 console.log(matches.input); // cat, bat, sat, fat
 console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 0
 ```
 
 ```javascript
@@ -234,6 +246,7 @@ let matches = pattern.exec(text);
 console.log(matches.index); // 0
 console.log(matches.input); // cat, bat, sat, fat
 console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 3
 matches = pattern.exec(text);
 console.log(matches.index); // 5
 console.log(matches.input); // cat, bat, sat, fat
@@ -279,13 +292,22 @@ if (pattern.test(text)) {
 } else {
     console.log('Please check your input.')
 }
+// 这上面这个就挺尴尬的 我 text='000-00-00000'; 结果还是匹配的
+// 这样比较有用一点
+let text = '000-00-0000';
+let pattern = /^\d{3}-\d{2}-\d{4}$/;
+if (pattern.test(text)) {
+    console.log('The pattern is matched.');
+} else {
+    console.log('Please check your input.')
+}
 ```
 
 验证用户输入
 
 ----
 
-继承的方法`toString()`和`toLocaleString()`都返回正则表达式的字面量，返回的是一个字符串
+继承的方法`toString()`和`toLocaleString()`都返回字面量字符串，返回的是一个字符串，返回的是`/pattern/flags`，有匹配模式和标记。
 
 ```javascript
 let pattern = /\[bc\]at/gi;
@@ -304,7 +326,7 @@ console.log(pattern.toLocaleString()); // /\[bc\]at/gi
 console.log(pattern.valueOf()); // /\[bc\]at/gi
 typeof pattern.valueOf(); // object
 Number(pattern); // NaN 
-// 先调用valueOf(),返回的不是原始类型，调用toString(),返回字符串是原始类型，转换。
+// 先调用valueOf(),返回的不是原始数据类型，调用toString(),返回字符串是原始数据类型，转换。
 ```
 
 #### 5.2.3 RegExp构造函数属性
