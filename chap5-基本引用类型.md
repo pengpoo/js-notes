@@ -1004,7 +1004,17 @@ function logColor () {
 window.logColor(); // red
 ```
 
-另一种获取`Global`对象的方法，==过段时间重看==
+另一种获取`Global`对象的方法，
+
+```javascript
+let global = function () {
+    return this;
+} ();
+```
+
+创建一个立即调用的函数表达式，返回 `this` 的值。当一个函数在没有明确（通过成为某个对象的方法，或者通过 `call()` / `apply()` ）指定 `this` 值的情况下执行时，`this` 值等于 `Global` 对象。
+
+调用一个简单返回 `this` 的函数是在任何执行上下文中获取 `Global` 对象的通用方式。
 
 #### 5.4.2 Math
 
