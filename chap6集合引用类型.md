@@ -154,7 +154,19 @@ console.log(a2); [0, 2, 3, 4]
 
 <a id='深/浅拷贝'>[深拷贝浅拷贝](https://juejin.cn/post/6844903493925371917) 现在看的迷迷糊糊的，等有一定知识储备后一定要回来看看啊</a>
 
-`Array.from()`还接受第二个可选的映射函数参数。。。看不懂了<a id='p40'> P140</a>
+`Array.from()`还接受第二个可选的映射函数参数。这个函数可以直接增强新数组的值，而无需通过 `Array.from().map()` 先创建一个中间数组。
+
+还可以接收第三个参数用于指定映射函数中 `this` 的值。重写 `this` 在箭头函数中不适用
+
+```javascript
+const a1 = [1, 2, 3, 4];
+const a2 = Array.from(a1, x => x * x);
+const a3 = Array.from(a1, function (x) { return x**this.exponent }, {exponent: 3});
+console.log(a2); // [1, 4, 9, 16]
+console.log(a3); // [1, 8, 27, 64]
+```
+
+
 
 ----
 
@@ -165,9 +177,18 @@ console.log(Array.of(1, 2, 3, 4)); // [1, 2, 3, 4]
 console.log(Array.of(undefined)); // [undefined]
 ```
 
+```javascript
+function test () {
+    let args1 = Array.prototype.slice.call(arguments, 1, 3);
+    let args2 = Array.prototype.slice.apply(arguments, [1, 3]);
+    console.log(args1, args2)
+}
+test('a', 'b', 'c', 'd'); // ['b', 'c'] ['b', 'c']
+```
+
+调用 `Array` 原型链上的函数 `slice()` ，`slice()` 是一个函数是有 `call()` 方法的，使用 `call()` 方法将 `slice()` 函数体内的 `this` 值设置为指向 `arguments` 对象，同时将 `1, 3` 作为参数传给 `slice()` 函数。
+
 ----
-
-
 
 
 
@@ -1424,7 +1445,6 @@ for (let val of s2.values()) {
 一周目先不深究，马住：
 
 - [深/浅拷贝](#深/浅拷贝)
-- [关于140页Array.from()的第二个参数的问题](#p40)
 - [全局作用域，全局执行上下文](#作用域)
 - [断言函数内部this的值](#断言函数内部this)
 - [定型数组](#定型数组)

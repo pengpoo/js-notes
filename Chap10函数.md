@@ -1,3 +1,5 @@
+[TOC]
+
 ## 第 10 章  函数
 
 在 JS 中函数实际上也是对象。每个函数都是 `Function` 类型的实例，而 `Function` 也有属性和方法。
@@ -588,5 +590,544 @@ console.log(sum(0, 10));
 sum = function (a, b) {
     return a + b;
 };
+// 好像并不是特别准确
+```
+
+### 10.7 函数作为值
+
+函数名在 ECMAScript 中就是一个变量，所以函数可以用在任何可以使用变量的地方
+
+**把函数作为参数传入：**
+
+```javascript
+function callSomeFunction (someFunction, someArguments) {
+    return someFunction(someArguments);
+}
+// callSomeFunction 创建了一个作用在全局的函数
+
+function add10 (num) {
+    return num + 10;
+}
+let result1 = callSomeFunction (add10, 10);
+console.log(result1);
+
+function greeting (name) {
+    return `hello ${ name }`;
+}
+let result2 = callSomeFunction(greeting, 'poo');
+console.log(result2);
+
+```
+
+访问函数不是调用函数，不带括号
+
+```javascript
+function callSomeFunction (someFunction, ...args) {
+    return someFunction(...args);
+}
+
+function addAll () {
+    let sum = 0;
+    for (let i = 0; i < arguments.length; i++) {
+        sum += arguments[i];
+    }
+    return sum;
+}
+
+let result = callSomeFunction(addAll, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+console.log(result); // 45
+```
+
+**从一个函数中返回另一个函数**
+
+假设有有一个包含对象的数组，现在需要按照任意指定的对象的属性将它们排列
+
+数组排序，按照一定规则，可以使用 `sort()` 方法加上传入的比较函数来实现。比较函数接收两个参数，是要比较的两个 `item` ，在这里就是数组里的两个对象。如果比较函数直接是两个对象，两个对象比较大小，会调用 `valueOf()` 和 `toString()` 方法，比较结果很可能没有实际意义。那要求的是能够按照任意属性比较大小，那就需要创建另一个函数，另一个能够接受属性的函数
+
+```javascript
+function createCompareFunction (property) {
+    return function comepareFunction (obj1, obj2) {
+        if (obj1[property] < obj2[property]) {
+            return -1;
+        } else if (obj1[property] > obj2[property]) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+let objArr = [
+    {
+        name: 'pengpoo',
+        age: 24
+    },
+    {
+        name: 'shen',
+        age:20
+    }
+]
+
+console.log(objArr.sort(createCompareFunction('age')));
+console.log(objArr.sort(createCompareFunction('name')));
+```
+
+### 10.9 函数内部
+
+ES6 之前，函数内部存在两个特殊的对象 `arguments` 和 `this`，ES6 新增 `new.target` 属性
+
+#### 10.9.1 arguments
+
+类数组对象，箭头函数定义的没有。`arguments` 对象还有一个属性 `callee` ，是一个指向 `arguments` 对象所在函数的指针。
+
+```javascript
+// 阶乘
+function factorial (num) {
+    if (num <= 1) {
+        return 1;
+    } else {
+        return num = num * factorial(num-1);
+    }
+}
+```
+
+只要给函数一个名称，而且这个名称不会变，这样的定义就没有问题。但函数要执行就必须保证函数名 `factorial`不变，导致了紧耦合。使用 `arguments.callee` 就可以让函数逻辑与函数名解耦：
+
+```javascript
+function factorial (num) {
+    if (num <=1 ) {
+        return 1;
+    } else {
+        return num * arguments.callee(num-1);
+    }
+}
+
+let trueFactorial = factorial;
+
+factorial = function () {
+    return 0;
+};
+
+console.log(trueFactorial(4)); // 12
+console.log(factorial(4)); // 0
+```
+
+#### 10.9.2 this
+
+这个对象在标准函数和箭头函数中有不同行为
+
+----
+
+在标准函数中，`this` 引用的是把当前函数当成方法调用的上下文对象，这时通常称其为 `this` 值（在网页的全局上下文中调用函数时，`this` 指向的是 `window`）
+
+```javascript
+window.color = 'red';
+let o = {
+    color: 'blue'
+}
+
+function logColor () {
+    console.log(this.color);
+}
+
+o.logColor = logColor;
+
+logColor(); // 'red'
+o.logColor(); // 'bule'
+```
+
+`this` 到底引用哪个对象必须得到函数调用的时候才能确定。执行到 `logColor()` 时，由于函数在全局上下文中被调用，`this` 指向 `window`，所以 `this.color` 就是 `window.color` 。把 `logColor` 指针的值赋值给 o 的 `logColor` ，现在`o.logColor` 也指向打印颜色的函数对象，再调用 `o.logColor()` ，`this` 会指向 `o`，所以 `this.color` 就是 `o.color` 。
+
+----
+
+在箭头函数中，`this` 引用的是定义箭头函数的上下文
+
+```javascript
+window.color = 'red';
+let o = {
+    color: 'blue'
+};
+
+let logColor = () => { console.log(this.color) };
+
+o.logColor = logColor;
+
+logColor(); // 'red'
+o.logColor(); // 'red'
+```
+
+这里的箭头函数是在全局上下文中定义的，所以 `this` 指向 `window`
+
+在事件回调或定时回调中调用某个函数时，`this` 值指向的并不是想要的对象。此时将回调函数写成箭头函数就可以解决问题
+
+```javascript
+function King () {
+    this.royaltyName = 'Henry';
+    // this 引用 King 实例
+    setTimeout(() => { console.log(`King ${ this.royaltyName }`)}, 1000);
+}
+
+function Queen () {
+    this.royaltyName = 'Elizabeth';
+    // this 引用 window 对象
+    setTimeout(function () { console.log(`Queen ${ this.royaltyName }`) }, 1000);
+}
+
+new King();
+new Queen();
+```
+
+#### 10.9.3 caller
+
+ECMASCript5 也会给函数加上一个 `caller` 属性，这个属性引用的是调用当前函数的函数，如果是在全局作用域中被调用则为 `null` 
+
+```javascript
+function outer () {
+    inner();
+}
+
+function inner () {
+    console.log(inner.caller);
+}
+
+outer();
+/*
+ƒ outer () {
+    inner();
+}
+*/
+inner(); // null
+```
+
+降低耦合度
+
+```javascript
+function outer () {
+    inner();
+}
+
+function inner () {
+    console.log(arguments.callee.caller);
+}
+
+outer();
+/*
+ƒ outer () {
+    inner();
+}
+*/
+```
+
+#### 10.9.4 new.target
+
+ECMAScript 中的函数始终可以作为一个构造函数实例化一个新的对象，也可作为普通函数被调用。ES6 中新增 `new.target` 属性，检测函数是否是使用 `new` 关键字调用的。如果函数是正常调用的，`new.target` 的值是 `undefined` ，如果是使用 `new` 关键字调用，则 `new.target` 将引用被调用的构造函数
+
+```javascript
+function King () {
+    if (!new.target) {
+        throw 'King must be instantiated using "new"';
+    }
+    console.log('King instantiated using "new"');
+}
+
+new King();
+King();
+```
+
+### 10.10 函数属性与方法
+
+ECMAScript 中函数是对象，有属性和方法。每个函数都有两个属性：`length` 和 `prototype`
+
+`length` 属性保存函数定义的**命名参数**的个数
+
+```javascript
+function logName (name) {
+    console.log(name);
+}
+function sum (num1, num2) {
+    console.log(num1 + num2);
+}
+function logHi () {
+    console.log('Hi');
+}
+console.log(logName.length); // 1
+console.log(sum.length); // 2
+console.log(logHi.length); // 0
+```
+
+`prototype` 是保存引用类型所有的实例方法的地方，`toString()`、`valueOf()` 这些方法都保存在 `prototype` 上，进而由实例共享。在ECMAScript5 中，`prototype`属性是不可枚举的，使用 `for-in` 循环不会返回这个属性。
+
+----
+
+函数还有两个方法 `apply()` 和 `call()`
+
+两个方法都会以指定的 `this` 值来调用函数，即会设置调用函数时函数体内 `this` 对象的值。
+
+`apply()` 方法接收两个参数：函数内 `this` 值和一个参数数组
+
+```javascript
+function sum (num1, num2) {
+    return num1 + num2;
+}
+
+function callSum1() {
+    return sum.apply(this, arguments);
+}
+
+function callSum2 (a, b) {
+    return sum.apply(this, [a, b])
+}
+
+callSum1(10, 20);
+callSum2(10, 20);
+
+console.log(callSum1(10, 20)); // 30
+console.log(callSum2(10, 20)); // 30
+```
+
+`callSum1()` 函数会调用 `sum()` 函数，将 `this`（`callSum1()` 内的 `this` 值） 作为函数体（ `sum()` 函数体）内的 `this` 值传入，同时传入了 `arguments` 对象。
+
+```javascript
+function sum () {
+    return this.num1 + this.num2;
+}
+
+let obj = {
+    num1: 1,
+    num2: 2
+}
+
+function callSum () {
+    return sum.apply(obj)
+}
+
+console.log(callSum());
+// 这写的没啥意义啊
+```
+
+`call()` 方法和 `apply()` 方法的作用一样，只是传参的形式不同。第一个参数也是 `this` 值，剩下的要传给被调用函数的参数是逐个传递的
+
+```javascript
+function sum (num1, num2) {
+    return num1 + num2;
+}
+
+function callSum (a, b) {
+    return sum.call(this, a, b); // 这儿逐个传递
+}
+
+console.log(callSum(10, 20)); // 30
+```
+
+到底是使用 `apply()` 还是 `call()`，完全取决于怎么给要调用的函数传参更方便。想直接传 `arguments` 对象或者一个数组就用 `apply()`。一个个传就用 `call()`。没有参数要传就都一样。
+
+`apply()` 和 `call()` 真正强大的地方并不是给函数传递参数，而是控制函数调用上下文（即函数体内 `this` 的值）的能力
+
+```javascript
+window.color = 'red';
+
+let o = {
+    color: 'blue'
+}
+
+function logColor () {
+    console.log(this.color);
+}
+
+logColor(); 'red'
+logColor.call(this); // 'red'
+logColor.call(window); // 'red'
+logColor.call(o); // 'blue'
+```
+
+使用 `call()` 或 `apply()` 的好处是可以将任意对象设置为任意函数的作用域，这样对象可以不用关心方法
+
+在之前切换上下文需要先把 `logColor()` 直接赋值为对象 `o` 的属性，然后再调用。
+
+ES5 出于同样的目的定义了一个新方法：`bind()`。`bind()` 方法会创建一个新的函数实例，其 `this` 值会被绑定到传给 `bind()` 的对象
+
+```javascript
+window.color = 'red';
+
+let o = {
+    color: 'blue'
+}
+
+function logColor () {
+    console.log(this.color);
+}
+
+let objLogColor = logColor.bind(o);
+objLogColor(); // 'blue'
+```
+
+在 `logColor()` 上调用 `bind()` 并传入对象 `o` 创建一个新的函数实例，一个 `this` 值被绑定到 `o` 的函数实例 `objLogColor()` 。
+
+对函数而言，继承的方法 `toLocalString()` 和 `toString()` 始终返回函数的代码，具体格式因浏览器而异。继承的方法 `valueOf()` 返回函数本身。
+
+### 10.11 函数表达式
+
+定义函数有两种方式：函数声明和函数表达式
+
+函数声明的关键特点是函数声明提升，函数声明会在代码执行前获得定义
+
+```javascript
+logHi();
+function logHi () {
+    console.log('Hi');
+}
+// 不会报错
+```
+
+```javascript
+let someFunction = function () {
+    // 函数体
+}
+
+```
+
+函数表达式看起来就像一个普通的变量定义和赋值，这样创建的函数叫作匿名函数，因为 `function` 关键字后面没有标识符。匿名函数有时也称为兰姆达函数。未赋值给其他变量的匿名函数的 `name` 属性是空字符串
+
+函数表达式需要先赋值再使用。
+
+```javascript
+// 不能这样写
+if (condition) {
+    function logHi () {
+        console.log('hi');
+    }
+} else {
+    function logHi () {
+        console.log('hello');
+    }
+}
+```
+
+这种写法在 ECMAScript 中不是有效语法，函数声明提升是重点，定义了两个 `logHi` ，改成
+
+```javascript
+let logHi;
+if (condition) {
+    logHi = function () {
+        console.log('hi');
+    }
+} else {
+    logHi = function () {
+        console.log('hello')
+    }
+}
+```
+
+先声明一个变量，根据 `condition` 的真假来选择给 `logHi`指定指向的函数
+
+创建函数并赋值给变量的能力也可以用于在一个函数中把另一个函数当作值返回
+
+```javascript
+function createCompareFunction (property) {
+    return function (obj1, obj2) {
+        let val1 = obj1[property];
+        let val2 = obj2[property];
+        if (val1 < val2) {
+            return -1;
+        } else if (val1 > val2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+```
+
+`createCompareFunction()` 返回一个匿名函数，这个匿名函数要么被赋值给一个变量，要么可以直接调用。
+
+任何时候只要函数被当作值来使用，他就是一个函数表达式
+
+### 10.12 递归
+
+**递归函数**通常的形式是一个函数通过名称调用自己
+
+```javascript
+function factorial (num) {
+    if (num <= 1) {
+        return 1;
+    } else {
+        return num * factorial(num - 1);
+    }
+}
+// 经典递归阶乘函数
+
+let anotherFac = factorial;
+factorial = null;
+console.log(anotherFac(4)); // 报错
+```
+
+使用 `arguments.callee` ，这是一个指向当前正在执行的函数的指针，可以在函数内部递归调用
+
+```javascript
+function factorial (num) {
+    if (num <= 1) {
+        return 1;
+    } else {
+        return num * arguments.callee(num - 1)
+    }
+}
+```
+
+在严格模式下，运行的代码是不能访问 `arguments.callee` 的，这时可以使用命名函数表达式
+
+```javascript
+const factorial = (function f (num) {
+    if (num <= 1) {
+        return 1;
+    } else {
+        return num * f(num - 1);
+    }
+});
+
+f = null;
+```
+
+如果你想在函数体内部引用当前函数，则需要创建一个命名函数表达式。**然后函数名称将会（且只会）作为函数体（作用域内）的本地变量**。
+
+函数表达式和命名函数表达式的区别就在于有没有标识符，上面那段代码里的 `f` 就是标识符
+
+### 10.13 尾调用优化
+
+尾调用就是外部函数的返回值是一个内部函数的返回值
+
+```javascript
+function outerFunction () {
+    return innerFunction();
+}
+```
+
+ES6 之前，执行这个例子会在内存中发生的操作是： P307
+
+如果函数的逻辑允许给予尾调用将其销毁，则引擎就会这么做
+
+#### 10.13.1 尾调用优化的条件
+
+- [ ] 代码在严格模式下执行
+- [ ] 外部函数的返回值是对尾调用函数的调用
+- [ ] 尾调用函数返回后不需要执行额外的逻辑
+- [ ] 尾调用函数不是引用外部函数作用域中自由变量的闭包
+
+#### 10.13.2  尾调用优化的代码
+
+```javascript
+// 计算斐波拉契数列
+"use strict"
+// 基础框架
+function fib (n) {
+    return fibImpl(0, 1, n);
+}
+
+function fibImpl (a, b, n) {
+    if (n === 0) {
+        return a;
+    } else {
+        return fibImpl(b, a + b, n - 1);
+    }
+}
 ```
 
