@@ -699,12 +699,12 @@ console.log(message.endWith('baz')); // true
 console.log(message.includex('ba')); // true
 ```
 
-`startWith()`和`includes()`可以接收第二各参数表示开始搜索的位置
+`startsWith()`和`includes()`可以接收第二各参数表示开始搜索的位置
 
-`endWith()`方法也接收第二个参数，用于表示当做字符串末尾的位置，默认为整个字符串的长度
+`endsWith()`方法也接收第二个参数，用于表示当做字符串末尾的位置，默认为整个字符串的长度
 
 ```javascript
-console.log(message.endWith(bar, 6)); // true 不包括6位置
+console.log(message.endsWith(bar, 6)); // true 不包括6位置
 ```
 
 **6. trim()方法**

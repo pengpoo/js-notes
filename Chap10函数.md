@@ -1131,3 +1131,367 @@ function fibImpl (a, b, n) {
 }
 ```
 
+### 10.14 闭包
+
+**闭包**指的是那些引用了另一个函数作用域中变量的函数，通常是在嵌套函数中实现的。
+
+```javascript
+let passed = 3;
+function addTo () {
+    let inner = 2;
+    console.log(inner + passed);
+}
+addTo(); // 5
+console.dir(addTo); 
+```
+
+![屏幕截图 2021-03-19 132209](https://gitee.com/pengpoo/pictures/raw/master/notes_imgs/2021/03/19/20210319132242.png)
+
+> closures are nothing but functions with preserved data.
+
+```javascript
+function compare (value1, value2) {
+    if (value1 < value2) {
+        return -1;
+    } else if (value > value2) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+```
+
+
+
+```javascript
+function createCompareFunction (propertyName) {
+    return function (obj1, obj2) {
+        let value1 = obj1[propertyName];
+        let value2 = obj2[propertyName];
+        
+        if (value1 < value2) {
+            return -1;
+        } else if (value1 > value2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    };
+}
+
+let compare = createCompareFunction('name');
+let result = compare({name: 'poo'}, {name: 'kataomoi'});
+```
+
+
+
+#### 10.14.1 this 对象
+
+```javascript
+window.identity = 'The Window';
+let object = {
+    identity: 'My Window',
+    getIdentityFunc () {
+        return function () {
+            return this.identity;
+        };
+    }
+};
+
+console.log(object.getIdentityFunc()()); // 'The Window'
+```
+
+
+
+```javascript
+window.identity = 'The Window';
+let object = {
+    identity: 'My Window',
+    getIdentityFunc () {
+        let that = this;
+        return function () {
+            return that.identity;
+        };
+    }
+};
+
+console.log(object.getIdentityFunc()()); // 'My Window'
+```
+
+
+
+```javascript
+window.identity = 'The Window';
+let object = {
+    identity: 'My Window',
+    getIdentity () {
+		return this.identity;
+    }
+};
+
+console.log(object.getIdentity()); // 'My Window'
+console.log((object.getIdentity)()); // 'My Window'
+console.log((object.getIdentity = object.getIdentity)()); // 'The Window'
+```
+
+第三次执行了一次赋值，紧接着调用。因为赋值表达式的值是函数本身，`this` 的值不再与任何对象绑定。
+
+```javascript
+// 如果
+object.getIdentity = object.getIdentity;
+console.log(object.getIdentity()); // 'My Window'
+// 上面的那个相当于
+f = object.getIdentity;
+console.log(f()); // 'The Window'
+```
+
+#### 10.14.2 内存泄漏
+
+IE9 之前的版本中，把 HTML 元素保存在某个闭包的作用域中，就相当于宣布该元素不能被销毁
+
+```javascript
+function assignHandler () {
+    let element = document.getElementById('someElement');
+    element.onclick = () => console.log(element.id);
+}
+```
+
+上面创建了一个闭包，即 `element` 元素的事件处理程序，而这个处理程序又创建了一个循环引用。匿名函数引用着 `assignHandler()` 的活动对象，阻止了 对 `element` 的引用计数归零。只要匿名函数存在，`element` 的引用计数至少为 1。也就是说内存不会被回收。稍加修改就可以避免这种情况
+
+```javascript
+function assignHandler () {
+    let element = document.getElementById('someElement');
+    let id = element.id;
+    element.onclick = () => console.log(id);
+    element = null;
+}
+```
+
+闭包改为引用一个保存着 `element.id` 的变量 `id` ，从而消除了循环引用，但闭包还是会引用到 `element`，。。。。。
+
+### 10.15 立即调用的函数表达式
+
+立即调用的匿名函数又被称为**立即调用的函数表达式**。
+
+使用 IIFE 可以模拟块级作用域
+
+```javascript
+(function () {
+    for (var i = 0; i < count; i++) {
+        console.log(i);
+    }
+})();
+console.log(i); // 抛出错误
+```
+
+可以用 IIFE 锁定参数值
+
+```javascript 
+let divs = document.querySelectorAll('div');
+// 达不到目的
+for (var i = 0; i < divs.length; ++i) {
+    divs[i].addEventListener('click', function() {
+        console.log(i);
+    });
+}
+```
+
+在执行单机处理程序时，迭代变量的值是循环结束时的最终值。
+
+借助 IIFE 来执行一个函数表达式，传入每次循环的当前索引
+
+```javascript
+let divs = document.querySelectorAll('div');
+for (var i = 0; i < divs.length; ++i) {
+    divs[i].addEventListener('click', (function (frozenCounter) {
+        return function () {
+            console.log(frozenCunter);
+        };
+    })(i));
+}
+```
+
+使用块级作用域
+
+```javascript 
+let divs = document.querySelectorAll('div');
+for (let i = 0; i < divs.length; ++i) {
+    divs[i].addEventListener('click', function () {
+        console.log(i);
+    });
+}
+```
+
+### 10.16 私有变量
+
+JS 没有私有成员的概念，所有对象属性都是共有的。
+
+但是有私有变量的概念，任何定义在函数或块中的变量都可以认为是私有的，包括函数参数、局部变量、以及函数内部的其他函数
+
+```javascript
+function add (num1, num2) {
+    let sum = num1 + num2;
+    return sum;
+} // sum num1 num2 都是私有变量
+```
+
+特权方法是能够访问函数私有变量（及私有函数）的公有办法
+
+创建特权方法，在构造函数中实现
+
+```javascript
+function MyObj () {
+    // 私有变量和函数
+    let privateVariable = 10;
+    function privateFunction () {
+        return false;
+    }
+    // 特权方法
+    this.publicMethod = function () {
+        console.log(++privateVariable);
+        return privateFunction();
+    };
+}
+
+let myObj = new MyObj();
+console.log(myObj.publicMethod()); // 11 false
+console.log(myObj.privateVariable); // undefined
+```
+
+可以定义私有变量和特权方法，以隐藏不能被直接修改的数据
+
+```javascript
+function Person (name) {
+    this.getName = function () {
+        return name;
+    };
+    
+    this.setName = function (value) {
+        name = value;
+    };
+}
+
+let person = new Person('Nicholas');
+console.log(person.getName()); // Nicholas
+person.setName('Greg');
+console.log(person.getName()); // Greg
+```
+
+私有变量 `name` 对每个 `person` 实例而言都是独一无二的，以为每次调用构造函数，都会重新创建一套变量和方法
+
+这样也有一个问题，必须通过构造函数来实现这种隔离，构造函数模式的缺点是每个实例都会重新创建一遍新方法。使用静态私有变量实现特权方法可以避免这个问题
+
+#### 10.16.1 静态私有变量
+
+使用私有作用域定义私有变量和函数实现特权方法
+
+```javascript
+(function() {
+    // 私有变量和方法
+    let privateVariable = 10;
+    
+    function privateFunction () {
+        return false;
+    }
+    
+    // 构造函数
+    MyObject = function () {};
+    
+    // 公有和特权方法
+    MyObject.prototype.publicMethod = function () {
+        console.log(++privateVariable, privateFunction());
+    };
+})();
+
+let myObj1 = new MyObject();
+myObj1.publicMethod() // 11 false
+
+let myObj2 = new MyObject();
+myObj2.publicMethod() // 12 false
+
+let myObj3 = new MyObject();
+myObj3.publicMethod() // 13 false
+```
+
+匿名函数表达式创建了一个包含构造函数及其方法的私有作用域，首先定义的是私有变量和方法，然后定义了构造函数。公有方法定义在构造函数的原型链上。
+
+这个模式定义构造函数没有使用函数声明，使用的是函数表达式，函数声明会创建内部函数，这里并不需要。声明`MyObject` 没有使用关键字，以为不使用关键字声明的变量会创建在全局作用域中，所以 `MyObject` 变成了全局变量，可以在这个私有域外部被访问。
+
+这个模式与前一个模式主要区别就是，私有变量和私有函数是由实例共享的，以为特权方法定义在原型链上，所以也是由实例共享的。
+
+```javascript
+(function () {
+    let name = '';
+    
+    Person = function (value) {
+        name = value;
+    };
+    
+    Person.prototype.getName = function () {
+        return name;
+    };
+    
+    Person.prototype.setName = function (value) {
+        name = value;
+    } ;
+})();
+
+let person1 = new Person('Nicholas');
+console.log(person1.getName()); // Nicholas
+person1.setName('Matt');
+console.log(person1.getName()); // Matt
+
+let person2 = new Person('poo');
+
+person1.setName('peng'); 
+console.log(person2.getName()); // peng
+```
+
+使用这种模式，`name` 变成了静态变量，可供所有实例使用，在任何实例上调用 `setName()` 方法，修改这个变量都会影响其他实例。
+
+到底是把私有变量放在实例中，还是作为静态私有变量，根据需求
+
+#### 10.16.2 模块模式
+
+前面的模式通过自定义类型创建私有变量和特权方法
+
+模块模式则在一个单例对象上实现了相同的隔离和封装
+
+单例对象就是只有一个实例的对象
+
+```javascript
+let singleton = {
+    name: value,
+    method () {
+        // 方法代码
+    }
+};
+```
+
+模块模式是在单例对象基础上加以扩展，使其通过作用域链来关联私有变量和特权方法
+
+```javascript
+let sigleton = function () {
+    // 私有变量和函数
+    let privateVariable = 10;
+    
+    function privateFunction () {
+        return false;
+    }
+    
+    // 特权/公有方法和属性
+    return {
+        publicProperty: true,
+        
+        piblicMethod () {
+            privateVariable++;
+            return privateFunction();
+        }
+    };
+}();
+```
+
+模块模式使用了匿名函数返回一个对象，匿名函数内部首先定义私有变量和函数。之后创建一个要通过匿名函数返回的对象字面量。这个对象字面量中只包含可以公开访问的属性和方法。如果单例对象需要进行某种初始化，并且需要访问私有变量时，就可以采用这个模式。
+
+#### 10.16.3 模块增强模式
+
