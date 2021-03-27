@@ -456,7 +456,7 @@ while (currentChildNode) {
     if (currentChildNode.nodeType === 1) {
         processChild(currentChild);
     }
-    if (currentChildNode === parentElement.lastChild) { // 不要循环也结束
+    if (currentChildNode === parentElement.lastChild) { // 不要 break 循环也结束
         break;
     }
     currentChildNode = currentChildNode.nextSibling;
