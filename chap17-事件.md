@@ -1,3 +1,5 @@
+[TOC]
+
 ## chap17 事件
 
 JavaScript 与 HTML 交互是通过事件实现的，事件代表浏览器窗口中某个有意义的时刻。可以使用仅在事件发生时执行的处理程序订阅事件。
@@ -396,5 +398,47 @@ var EventUtil = {
 btn.onclick = function (event) {
     event = EventUtil.getEvent(event);
 };
+```
+
+
+
+事件对象还有很多属性。其中很多都取决于事件类型，鼠标事件有一组属性，键盘事件又有另一组属性。
+
+```javascript
+<div id="menu">
+  <button data-action="save">Save</button>
+  <button data-action="load">Load</button>
+  <button data-action="search">Search</button>
+</div>
+
+<script>
+  class Menu {
+    constructor(elem) {
+      this._elem = elem;
+      elem.onclick = this.onClick.bind(this); // (*)
+    }
+
+    save() {
+      alert('saving');
+    }
+
+    load() {
+      alert('loading');
+    }
+
+    search() {
+      alert('searching');
+    }
+
+    onClick(event) {
+      let action = event.target.dataset.action;
+      if (action) {
+        this[action]();
+      }
+    };
+  }
+
+  new Menu(menu);
+</script>
 ```
 
